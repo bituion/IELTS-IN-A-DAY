@@ -461,7 +461,6 @@ function renderQuestion(state) {
         btn.classList.add('correct');
         session.correctCount += 1;
         session.streak += 1;
-        setFeedback('正确！', 'ok');
       } else {
         btn.classList.add('wrong');
         session.streak = 0;
