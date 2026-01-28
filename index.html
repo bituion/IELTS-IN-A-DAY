@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>雅思单词中文释义选择题</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="card" aria-labelledby="quizTitle">
+      <div class="quiz-head">
+        <div>
+          <h2 id="quizTitle">测验</h2>
+          <p class="sub">题目来自 <code>all_words.txt</code>（乱序），释义来自 <code>meanings.csv</code>（自动加载）。</p>
+        </div>
+        <div class="pill" id="pillStatus">未加载词表</div>
+        <div class="stats">
+          <div class="stat"><div class="k">进度</div><div class="v" id="statProgress">-</div></div>
+          <div class="stat"><div class="k">正确</div><div class="v" id="statCorrect">-</div></div>
+          <div class="stat"><div class="k">连续</div><div class="v" id="statStreak">-</div></div>
+        </div>
+      </div>
+
+      <div class="qbox" id="qbox">
+        <div class="qrow">
+          <div class="wordline">
+            <button class="btn ghost speak-btn" id="btnSpeak" type="button" aria-label="播放英式发音" disabled>发音</button>
+            <div class="qword" id="qWord">正在加载…</div>
+          </div>
+          <div class="qmeta" id="qMeta"></div>
+        </div>
+
+        <div class="options" id="options"></div>
+
+        <div class="actions">
+          <button class="btn" id="btnNext" disabled>下一题</button>
+          <button class="btn ghost" id="btnSkip" disabled>跳过（无释义/不确定）</button>
+        </div>
+
+        <div class="corner-actions">
+          <button class="btn ghost" id="btnResetSession" title="只重置当前测验进度，不清空释义库">重置本次进度</button>
+          <button class="btn ghost" id="btnExportMissed">导出错题与跳过</button>
+        </div>
+
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
