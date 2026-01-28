@@ -256,16 +256,11 @@ function downloadText(filename, text) {
 }
 
 function setStatusPill(text, tone = 'muted') {
-  const el = $('pillStatus');
-  el.textContent = text;
-  el.style.borderColor = tone === 'ok' ? 'rgba(34,197,94,.55)'
-    : tone === 'warn' ? 'rgba(245,158,11,.55)'
-      : tone === 'bad' ? 'rgba(239,68,68,.55)'
-        : 'rgba(255,255,255,.12)';
-  el.style.color = tone === 'ok' ? 'rgba(34,197,94,.9)'
-    : tone === 'warn' ? 'rgba(245,158,11,.95)'
-      : tone === 'bad' ? 'rgba(239,68,68,.95)'
-        : 'rgba(255,255,255,.65)';
+  // 用户要求不显示任何“已加载/未加载/覆盖率”等状态。
+  // 保留函数以避免调用方改动过大。
+  void text;
+  void tone;
+  return;
 }
 
 function setFeedback(text, tone = 'muted') {
@@ -566,17 +561,8 @@ function wireApp() {
   state.__speech = state.__speech ?? { interacted: false, lastKey: '' };
 
   const refreshPill = () => {
-    const total = state.words.length;
-    const known = total
-      ? state.words.reduce((acc, w) => acc + (normalizeMeaning(state.meanings[w]) ? 1 : 0), 0)
-      : Object.values(state.meanings).filter((m) => normalizeMeaning(m)).length;
-    if (!total) {
-      setStatusPill('未加载词表', 'muted');
-      return;
-    }
-    const coverage = total ? Math.round((known / total) * 100) : 0;
-    const tone = coverage >= 80 ? 'ok' : coverage >= 30 ? 'warn' : 'bad';
-    setStatusPill(`词表：${total} | 已有释义：${known}（${coverage}%）`, tone);
+    // 不显示状态
+    return;
   };
 
   const ensureSession = (opts = { forceNew: false }) => {
