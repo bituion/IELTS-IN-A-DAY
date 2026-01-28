@@ -33,9 +33,11 @@
 	- `all_words.txt`
 	- `meanings.csv`
 	- （可选）`.nojekyll`
-2. 到 GitHub 仓库 → **Settings** → **Pages**：
+2. 到 GitHub 仓库 → **Settings** → **Actions** → **General**：
+	- `Workflow permissions` 选择 **Read and write permissions**（否则会出现 `Resource not accessible by integration`）
+3. 到 GitHub 仓库 → **Settings** → **Pages**：
 	- Source 选择 **GitHub Actions**
-3. 等待 Actions 跑完后，Pages 会给出访问地址。
+4. 等待 Actions 跑完后，Pages 会给出访问地址。
 
 ### 方式 B：直接用分支发布（不推荐但也可用）
 
