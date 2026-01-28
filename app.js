@@ -1,6 +1,33 @@
 const WORDS_URL = './all_words.txt';
 const STORAGE_KEY_MEANINGS = 'ielts_meanings_v1';
 const STORAGE_KEY_SESSION = 'ielts_session_v1';
+const STORAGE_KEY_SETTINGS = 'ielts_settings_v1';
+
+const CATEGORIES = [
+  { id: 'all', name: '全量词库 (All Words)', file: './all_words.txt' },
+  { id: '01', name: '01 Natural Geography (自然地理)', file: './list/01_自然地理.txt' },
+  { id: '02', name: '02 Plant Research (植物研究)', file: './list/02_植物研究.txt' },
+  { id: '03', name: '03 Animal Protection (动物保护)', file: './list/03_动物保护.txt' },
+  { id: '04', name: '04 Space Exploration (太空探索)', file: './list/04_太空探索.txt' },
+  { id: '05', name: '05 School Education (学校教育)', file: './list/05_学校教育.txt' },
+  { id: '06', name: '06 Technology Invention (科技发明)', file: './list/06_科技发明.txt' },
+  { id: '07', name: '07 Culture History (文化历史)', file: './list/07_文化历史.txt' },
+  { id: '08', name: '08 Language Evolution (语言演化)', file: './list/08_语言演化.txt' },
+  { id: '09', name: '09 Entertainment Sports (娱乐运动)', file: './list/09_娱乐运动.txt' },
+  { id: '10', name: '10 Item Material (物品材料)', file: './list/10_物品材料.txt' },
+  { id: '11', name: '11 Fashion Trend (时尚潮流)', file: './list/11_时尚潮流.txt' },
+  { id: '12', name: '12 Diet Health (饮食健康)', file: './list/12_饮食健康.txt' },
+  { id: '13', name: '13 Architecture Place (建筑场所)', file: './list/13_建筑场所.txt' },
+  { id: '14', name: '14 Travel Transport (交通旅行)', file: './list/14_交通旅行.txt' },
+  { id: '15', name: '15 State Government (国家政府)', file: './list/15_国家政府.txt' },
+  { id: '16', name: '16 Social Economy (社会经济)', file: './list/16_社会经济.txt' },
+  { id: '17', name: '17 Law Regulation (法律法规)', file: './list/17_法律法规.txt' },
+  { id: '18', name: '18 Battlefield Comp (沙场争锋)', file: './list/18_沙场争锋.txt' },
+  { id: '19', name: '19 Social Role (社会角色)', file: './list/19_社会角色.txt' },
+  { id: '20', name: '20 Behavior Action (行为动作)', file: './list/20_行为动作.txt' },
+  { id: '21', name: '21 Body Mind Health (身心健康)', file: './list/21_身心健康.txt' },
+  { id: '22', name: '22 Time Date (时间日期)', file: './list/22_时间日期.txt' }
+];
 
 const $ = (id) => document.getElementById(id);
 const on = (id, eventName, handler) => {
@@ -98,6 +125,18 @@ function loadSession() {
   } catch {
     return null;
   }
+}
+
+function loadSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSettings(s) {
+  localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(s));
 }
 
 function saveSession(session) {
@@ -341,10 +380,17 @@ function buildQuestion(word, meaningsMap, allWords) {
   return { word, ready: true, correctMeaning: correct, options };
 }
 
-function createDefaultSession(words) {
+function createDefaultSession(words, mode = 'random') {
+  let order = words.slice();
+  if (mode === 'random') {
+    shuffleInPlace(order);
+  }
+  // mode === 'sequence' implies keeping the array as is (words order)
+
   return {
     startedAt: Date.now(),
-    order: shuffleInPlace(words.slice()),
+    order: order,
+    mode: mode, // Save mode in session for reference
     index: 0,
     correctCount: 0,
     answeredCount: 0,
@@ -485,8 +531,9 @@ function renderQuestion(state) {
   updateStats(session, total);
 }
 
-async function loadWordsFromFile() {
-  const res = await fetch(WORDS_URL, { cache: 'no-store' });
+async function loadWordsFromFile(url) {
+  const targetUrl = url || WORDS_URL;
+  const res = await fetch(targetUrl, { cache: 'no-store' });
   if (!res.ok) throw new Error(`加载失败：${res.status} ${res.statusText}`);
   const text = await res.text();
   const words = parseWordsTxt(text);
@@ -556,9 +603,34 @@ function wireApp() {
     words: [],
     meanings: normalizeMeaningMapKeys(loadMeanings()),
     session: loadSession(),
+    settings: loadSettings(),
   };
 
   state.__speech = state.__speech ?? { interacted: false, lastKey: '' };
+
+  // UI Controls
+  const catSel = $('categorySelect');
+  const modeSel = $('modeSelect');
+
+  // Init Category Select
+  if (catSel) {
+    catSel.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (state.settings.categoryId && CATEGORIES.some(c => c.id === state.settings.categoryId)) {
+      catSel.value = state.settings.categoryId;
+    }
+  }
+
+  // Init Mode Select
+  if (modeSel && state.settings.mode) {
+    modeSel.value = state.settings.mode;
+  }
+
+  const getCurrentCategory = () => {
+     const val = catSel ? catSel.value : 'all';
+     return CATEGORIES.find(c => c.id === val) || CATEGORIES[0];
+  };
+
+  const getCurrentMode = () => modeSel ? modeSel.value : 'random';
 
   const refreshPill = () => {
     // 不显示状态
@@ -567,9 +639,13 @@ function wireApp() {
 
   const ensureSession = (opts = { forceNew: false }) => {
     if (!state.words.length) return;
+    const mode = getCurrentMode();
     const existing = loadSession();
-    if (opts.forceNew) {
-      state.session = createDefaultSession(state.words);
+    
+    const existingMode = existing?.mode || 'random';
+    
+    if (opts.forceNew || existingMode !== mode) {
+      state.session = createDefaultSession(state.words, mode);
       saveSession(state.session);
       return;
     }
@@ -581,21 +657,61 @@ function wireApp() {
       const sameSize = orderSet.size === wordSet.size;
       const sameContent = sameSize && [...wordSet].every((w) => orderSet.has(w));
       if (!sameContent) {
-        state.session = createDefaultSession(state.words);
+        state.session = createDefaultSession(state.words, mode);
         saveSession(state.session);
       } else {
         state.session = existing;
       }
     } else {
-      state.session = createDefaultSession(state.words);
+      state.session = createDefaultSession(state.words, mode);
       saveSession(state.session);
     }
   };
 
+  if (catSel) {
+    on('categorySelect', 'change', async () => {
+      state.settings.categoryId = catSel.value;
+      saveSettings(state.settings);
+
+      setFeedback('正在切换词库…', 'muted');
+      try {
+        const cat = getCurrentCategory();
+        state.words = await loadWordsFromFile(cat.file);
+        ensureSession({ forceNew: true });
+        refreshPill();
+        setFeedback(`已切换到：${cat.name}`, 'ok');
+        renderQuestion(state);
+      } catch (e) {
+        setFeedback(`切换失败: ${e.message}`, 'bad');
+      }
+    });
+  }
+
+  if (modeSel) {
+    let prevMode = modeSel.value;
+    // Capture focus to know previous value (approximate)
+    on('modeSelect', 'focus', () => { prevMode = modeSel.value; });
+    
+    on('modeSelect', 'change', () => {
+      const newMode = modeSel.value;
+      const ok = confirm('切换模式将重置当前进度，确定吗？');
+      if (ok) {
+        state.settings.mode = newMode;
+        saveSettings(state.settings);
+        prevMode = newMode;
+        ensureSession({ forceNew: true });
+        renderQuestion(state);
+        setFeedback('模式已切换，进度已重置。', 'ok');
+      } else {
+        modeSel.value = prevMode;
+      }
+    });
+  }
+
   on('btnLoad', 'click', async () => {
     setFeedback('正在加载词表与释义库…', 'muted');
     try {
-      state.words = await loadWordsFromFile();
+      state.words = await loadWordsFromFile(getCurrentCategory().file);
       
       // 尝试自动加载 meanings.csv
       try {
@@ -760,7 +876,7 @@ function wireApp() {
   // 自动尝试加载词表（成功则自动可用；失败则提示用户用本地服务器）
   (async () => {
     try {
-      state.words = await loadWordsFromFile();
+      state.words = await loadWordsFromFile(getCurrentCategory().file);
       try {
         const mRes = await fetch('./meanings.csv');
         if (mRes.ok) {

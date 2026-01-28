@@ -12,7 +12,13 @@
       <div class="quiz-head">
         <div>
           <h2 id="quizTitle">测验</h2>
-          
+          <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <select id="categorySelect" aria-label="选择题库" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc; max-width: 100%;"></select>
+            <select id="modeSelect" aria-label="选择模式" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
+              <option value="random">乱序</option>
+              <option value="sequence">顺序</option>
+            </select>
+          </div>
         </div>
         <div class="stats">
           <div class="stat"><div class="k">进度</div><div class="v" id="statProgress">-</div></div>
